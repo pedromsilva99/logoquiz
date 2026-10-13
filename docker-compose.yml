@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: logoquiz
+      POSTGRES_PASSWORD: logoquiz
+      POSTGRES_DB: logoquiz
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logoquiz"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  backend:
+    build: ./backend
+    image: logoquiz-backend
+    environment:
+      DATABASE_URL: postgres://logoquiz:logoquiz@db:5432/logoquiz?sslmode=disable
+      ASSETS_DIR: /app/assets/logos
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/assets:/app/assets:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
